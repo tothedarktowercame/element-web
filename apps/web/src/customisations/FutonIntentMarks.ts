@@ -7,6 +7,8 @@ Please see LICENSE files in the repository root for full details.
 
 import { type MatrixClient } from "matrix-js-sdk/src/matrix";
 
+import { highlightFutonAnnotationIntent } from "./FutonAnnotations";
+
 interface Cue {
     start: number;
     end: number;
@@ -192,5 +194,13 @@ export async function decorateWithFutonIntentMarks(
     });
     if (!response.ok) return 0;
     const validated = validatedIntentMarks((await response.json()) as TurnDetail);
-    return validated ? applyFutonIntentMarks(root, validated.source, validated.marks) : 0;
+    if (!validated) return 0;
+    const applied = applyFutonIntentMarks(root, validated.source, validated.marks);
+    root.querySelectorAll<HTMLElement>("[data-futon-intent-mark]").forEach((mark) => {
+        mark.addEventListener("mouseenter", () =>
+            highlightFutonAnnotationIntent(eventId, mark.dataset.futonIntentMark!),
+        );
+        mark.addEventListener("mouseleave", () => highlightFutonAnnotationIntent(eventId, null));
+    });
+    return applied;
 }

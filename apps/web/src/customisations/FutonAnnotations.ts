@@ -16,3 +16,16 @@ export function selectFutonAnnotationEvent(
         iframe.contentWindow?.postMessage(message, targetOrigin);
     });
 }
+
+/** Focus one intent in the annotation widget while its source cue is hovered. */
+export function highlightFutonAnnotationIntent(
+    eventId: string,
+    intent: string | null,
+    root: ParentNode = document,
+    targetOrigin: string = window.location.origin,
+): void {
+    const message = { type: "futon.highlight-intent", eventId, intent };
+    root.querySelectorAll<HTMLIFrameElement>('iframe[src*="/xiang-widget/"]').forEach((iframe) => {
+        iframe.contentWindow?.postMessage(message, targetOrigin);
+    });
+}

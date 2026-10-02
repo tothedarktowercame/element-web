@@ -65,22 +65,62 @@ $left-gutter: 64px;
 
     [data-futon-intent-mark] {
         text-decoration-line: underline;
-        text-decoration-color: #7b61a8;
-        text-decoration-thickness: 2px;
+        text-decoration-color: currentcolor;
+        text-decoration-thickness: 1px;
         text-underline-offset: 0.14em;
+        transition: color 120ms ease;
     }
 
-    [data-futon-intent-mark="approve"],
-    [data-futon-intent-mark="continue"] {
-        text-decoration-color: #3a9b58;
+    [data-futon-intent-mark]:hover {
+        text-decoration-thickness: 2px;
     }
 
-    [data-futon-intent-mark="disagree"],
-    [data-futon-intent-mark="report-problem"],
-    [data-futon-intent-mark="constrain"] {
-        text-decoration-color: #c94848;
+    [data-futon-intent-mark="report-problem"]:hover,
+    [data-futon-intent-mark="explain"]:hover,
+    [data-futon-intent-mark="report"]:hover {
+        color: #2a78d6;
     }
 
+    [data-futon-intent-mark="clarify"]:hover,
+    [data-futon-intent-mark="qualify"]:hover,
+    [data-futon-intent-mark="approve"]:hover,
+    [data-futon-intent-mark="disagree"]:hover,
+    [data-futon-intent-mark="collect"]:hover,
+    [data-futon-intent-mark="retract"]:hover {
+        color: #eb6834;
+    }
+
+    [data-futon-intent-mark="constrain"]:hover,
+    [data-futon-intent-mark="extend"]:hover,
+    [data-futon-intent-mark="explore"]:hover {
+        color: #1baf7a;
+    }
+
+    [data-futon-intent-mark="propose"]:hover,
+    [data-futon-intent-mark="prioritize"]:hover,
+    [data-futon-intent-mark="redirect"]:hover,
+    [data-futon-intent-mark="defer"]:hover,
+    [data-futon-intent-mark="delegate"]:hover,
+    [data-futon-intent-mark="withdraw"]:hover {
+        color: #eda100;
+    }
+
+    [data-futon-intent-mark="ask-action"]:hover,
+    [data-futon-intent-mark="continue"]:hover,
+    [data-futon-intent-mark="verify"]:hover {
+        color: #e87ba4;
+    }
+
+    [data-futon-intent-mark="gist"]:hover,
+    [data-futon-intent-mark="unresolved"]:hover {
+        color: #66665e;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        [data-futon-intent-mark] {
+            transition: none;
+        }
+    }
     .mx_EventTileBubble {
         margin-block: var(--EventTileBubble_margin-block);
         min-width: 100px;
