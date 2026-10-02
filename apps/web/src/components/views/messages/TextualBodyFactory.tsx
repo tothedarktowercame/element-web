@@ -42,7 +42,7 @@ import { MediaPreviewGroupViewModel } from "../../../viewmodels/message-body/Med
 import PopOutIcon from "@vector-im/compound-design-tokens/assets/web/icons/pop-out";
 import { EditMessageComposerWrapper } from "../rooms/EditMessageComposerWrapper";
 import { ModuleApi } from "../../../modules/Api";
-import { clearFutonIntentMarks, decorateWithFutonIntentMarks } from "../../../customisations/FutonIntentMarks";
+import { registerFutonIntentMarks } from "../../../customisations/FutonIntentMarks";
 import { FutonMarimoCell, requestsPostsPerAuthorCell } from "../../../customisations/FutonMarimoCell";
 
 const logger = rootLogger.getChild("TextualBodyFactory");
@@ -286,17 +286,7 @@ export function TextualBodyFactory(props: Readonly<IBodyProps>): JSX.Element {
         const eventId = props.mxEvent.getId();
         if (!eventElement || !client || !roomId || !eventId) return;
 
-        let disposed = false;
-        const decorate = async (): Promise<void> => {
-            if (!disposed) await decorateWithFutonIntentMarks(eventElement, client, roomId, eventId);
-        };
-        void decorate();
-        const interval = window.setInterval(() => void decorate(), 10_000);
-        return (): void => {
-            disposed = true;
-            window.clearInterval(interval);
-            clearFutonIntentMarks(eventElement);
-        };
+        return registerFutonIntentMarks(eventElement, client, roomId, eventId);
     }, [client, content, props.mxEvent]);
 
     useEffect(() => {
@@ -339,12 +329,15 @@ export function TextualBodyFactory(props: Readonly<IBodyProps>): JSX.Element {
 
     const eventId = props.mxEvent.getId();
     const roomId = props.mxEvent.getRoomId();
-    const authors = roomContext.room
-        ?.getLiveTimeline()
-        .getEvents()
-        .filter((event) => event.getType() === "m.room.message")
-        .map((event) => event.getSender())
-        .filter((sender): sender is string => typeof sender === "string");
+    const requestsAuthorChart = eventId && roomId && requestsPostsPerAuthorCell(content.body);
+    const authors = requestsAuthorChart
+        ? roomContext.room
+              ?.getLiveTimeline()
+              .getEvents()
+              .filter((event) => event.getType() === "m.room.message")
+              .map((event) => event.getSender())
+              .filter((sender): sender is string => typeof sender === "string")
+        : undefined;
 
     return (
         <>
@@ -355,7 +348,7 @@ export function TextualBodyFactory(props: Readonly<IBodyProps>): JSX.Element {
                 urlPreviews={<MediaPreviewGroupPreview vm={mediaPreviewVm} className="mx_TextualBody_urlPreviews" />}
                 className={getTextualBodyClassName(content.msgtype as MsgType | undefined)}
             />
-            {eventId && roomId && authors && requestsPostsPerAuthorCell(content.body) ? (
+            {eventId && roomId && authors ? (
                 <FutonMarimoCell roomId={roomId} eventId={eventId} authors={authors} />
             ) : null}
         </>
