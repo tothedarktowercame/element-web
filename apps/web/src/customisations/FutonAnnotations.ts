@@ -29,3 +29,45 @@ export function highlightFutonAnnotationIntent(
         iframe.contentWindow?.postMessage(message, targetOrigin);
     });
 }
+
+export interface FutonAnnotationTheme {
+    type: "futon.annotation-theme";
+    theme: "light" | "dark";
+    fontFamily: string;
+    foreground: string;
+    background: string;
+}
+
+/** Send Element's resolved user theme to each isolated annotation iframe. */
+export function syncFutonAnnotationTheme(
+    root: Document = document,
+    targetOrigin: string = window.location.origin,
+): FutonAnnotationTheme {
+    const bodyStyle = window.getComputedStyle(root.body);
+    const surface = root.querySelector<HTMLElement>(".mx_RoomView") ?? root.body;
+    const surfaceStyle = window.getComputedStyle(surface);
+    const message: FutonAnnotationTheme = {
+        type: "futon.annotation-theme",
+        theme:
+            root.body.classList.contains("cpd-theme-dark") || root.body.classList.contains("cpd-theme-dark-hc")
+                ? "dark"
+                : "light",
+        fontFamily: bodyStyle.fontFamily,
+        foreground: surfaceStyle.color,
+        background: surfaceStyle.backgroundColor,
+    };
+    root.querySelectorAll<HTMLIFrameElement>('iframe[src*="/xiang-widget/"]').forEach((iframe) => {
+        iframe.contentWindow?.postMessage(message, targetOrigin);
+    });
+    return message;
+}
+
+let themeObserver: MutationObserver | undefined;
+
+/** Keep the widget aligned when Element's appearance setting changes. */
+export function observeFutonAnnotationTheme(root: Document = document): void {
+    syncFutonAnnotationTheme(root);
+    if (themeObserver) return;
+    themeObserver = new MutationObserver(() => syncFutonAnnotationTheme(root));
+    themeObserver.observe(root.body, { attributes: true, attributeFilter: ["class"] });
+}

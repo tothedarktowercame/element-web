@@ -8,7 +8,11 @@ Please see LICENSE in the repository root for full details.
 
 import { describe, expect, it, vi } from "vitest";
 
-import { highlightFutonAnnotationIntent, selectFutonAnnotationEvent } from "./FutonAnnotations";
+import {
+    highlightFutonAnnotationIntent,
+    selectFutonAnnotationEvent,
+    syncFutonAnnotationTheme,
+} from "./FutonAnnotations";
 
 describe("selectFutonAnnotationEvent", () => {
     it("sends the selected Matrix event only to a mounted FUTON widget", () => {
@@ -40,4 +44,21 @@ it("sends hover intent and its event to the annotation widget", () => {
         { type: "futon.highlight-intent", eventId: "$event", intent: "report-problem" },
         "https://zone.test",
     );
+});
+
+it("sends Element's resolved dark theme and font to the annotation widget", () => {
+    document.body.className = "cpd-theme-dark";
+    document.body.style.fontFamily = "Inter, sans-serif";
+    document.body.style.color = "rgb(230, 230, 230)";
+    document.body.style.backgroundColor = "rgb(20, 20, 20)";
+    const postMessage = vi.fn();
+    const query = vi
+        .spyOn(document, "querySelectorAll")
+        .mockReturnValue([{ contentWindow: { postMessage } }] as unknown as NodeListOf<HTMLIFrameElement>);
+
+    const message = syncFutonAnnotationTheme(document, "https://zone.test");
+    expect(message.theme).toBe("dark");
+    expect(message.fontFamily).toContain("Inter");
+    expect(postMessage).toHaveBeenCalledWith(message, "https://zone.test");
+    query.mockRestore();
 });

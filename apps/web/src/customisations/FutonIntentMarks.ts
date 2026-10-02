@@ -7,7 +7,7 @@ Please see LICENSE files in the repository root for full details.
 
 import { type MatrixClient } from "matrix-js-sdk/src/matrix";
 
-import { highlightFutonAnnotationIntent } from "./FutonAnnotations";
+import { highlightFutonAnnotationIntent, observeFutonAnnotationTheme } from "./FutonAnnotations";
 
 interface Cue {
     start: number;
@@ -183,6 +183,7 @@ export async function decorateWithFutonIntentMarks(
     roomId: string,
     eventId: string,
 ): Promise<number> {
+    observeFutonAnnotationTheme();
     const turnId = (await turnIds(client, roomId)).get(eventId);
     if (!turnId) return 0;
     const response = await fetch(`/chat-api/api/xiang/turns/${encodeURIComponent(turnId)}`, {
