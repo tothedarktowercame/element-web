@@ -89,6 +89,7 @@ interface InternalState {
     placeholder: ImageBodyViewPlaceholder;
     imageSize: ImageSize;
     generatedThumbnailUrl: string | null;
+    authenticatedContentUrl: string | null;
 }
 
 /**
@@ -141,6 +142,7 @@ export class ImageBodyViewModel
                 : ImageBodyViewPlaceholder.SPINNER,
             imageSize: SettingsStore.getValue("Images.size"),
             generatedThumbnailUrl: null,
+            authenticatedContentUrl: null,
         };
     }
 
@@ -262,6 +264,7 @@ export class ImageBodyViewModel
         this.clearBlurhashTimeout();
         MatrixClientPeg.get()?.off(ClientEvent.Sync, this.reconnectedListener);
         this.revokeGeneratedThumbnailUrl();
+        this.revokeAuthenticatedContentUrl();
         this.state = ImageBodyViewModel.createInitialState(mxEvent);
     }
 
@@ -275,6 +278,23 @@ export class ImageBodyViewModel
             ...this.state,
             generatedThumbnailUrl: null,
         };
+    }
+
+    private revokeAuthenticatedContentUrl(): void {
+        if (!this.state.authenticatedContentUrl) {
+            return;
+        }
+
+        URL.revokeObjectURL(this.state.authenticatedContentUrl);
+        this.state = {
+            ...this.state,
+            authenticatedContentUrl: null,
+        };
+    }
+
+    private async downloadFumarimoOutput(content: ImageContent): Promise<string> {
+        const response = await mediaFromContent(content).downloadSourceAuthenticated();
+        return URL.createObjectURL(await response.blob());
     }
 
     private clearBlurhashTimeout(): void {
@@ -343,6 +363,30 @@ export class ImageBodyViewModel
         let thumbUrl: string | null;
         let contentUrl: string | null;
 
+        const content = this.props.mxEvent.getContent<ImageContent>() as ImageContent & {
+            "org.paragogy.marimo"?: { kind?: string };
+        };
+        if (content["org.paragogy.marimo"]?.kind === "image-output" && content.url) {
+            try {
+                const authenticatedContentUrl = await this.downloadFumarimoOutput(content);
+                this.revokeAuthenticatedContentUrl();
+                this.state = {
+                    ...this.state,
+                    contentUrl: authenticatedContentUrl,
+                    thumbUrl: authenticatedContentUrl,
+                    authenticatedContentUrl,
+                    error: null,
+                };
+                this.updateSnapshotFromState();
+                return;
+            } catch (error) {
+                logger.error("Unable to download Fumarimo output: ", error);
+                this.state = { ...this.state, error };
+                this.updateSnapshotFromState();
+                return;
+            }
+        }
+
         if (this.props.mediaEventHelper?.media.isEncrypted || this.props.mediaEventHelper?.isFromLocalUpload) {
             try {
                 [contentUrl, thumbUrl] = await Promise.all([
@@ -374,7 +418,6 @@ export class ImageBodyViewModel
             thumbUrl = this.getThumbUrl();
         }
 
-        const content = this.props.mxEvent.getContent<ImageContent>();
         let generatedThumbnailUrl: string | null = null;
         let isAnimated = content.info?.["org.matrix.msc4230.is_animated"];
         if (isAnimated === undefined) {
@@ -664,6 +707,7 @@ export class ImageBodyViewModel
         this.clearBlurhashTimeout();
         MatrixClientPeg.get()?.off(ClientEvent.Sync, this.reconnectedListener);
         this.revokeGeneratedThumbnailUrl();
+        this.revokeAuthenticatedContentUrl();
         super.dispose();
     }
 }

@@ -147,6 +147,23 @@ class MediaImplementation {
         }
         return res;
     }
+
+    /**
+     * Downloads source media through Matrix's authenticated media endpoint.
+     */
+    public async downloadSourceAuthenticated(): Promise<Response> {
+        // eslint-disable-next-line no-restricted-properties
+        const src = this.client.mxcUrlToHttp(this.srcMxc, undefined, undefined, undefined, false, true, true);
+        const accessToken = this.client.getAccessToken();
+        if (!src || !accessToken) {
+            throw new UserFriendlyError("error|download_media");
+        }
+        const res = await fetch(src, { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (!res.ok) {
+            throw parseErrorResponse(res, await res.text());
+        }
+        return res;
+    }
 }
 
 export type Media = PublicInterface<MediaImplementation>;

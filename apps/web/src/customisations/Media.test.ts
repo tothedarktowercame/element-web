@@ -30,4 +30,32 @@ describe("Media", () => {
         const media = mediaFromMxc("mxc://matrix.org/1234");
         await expect(media.downloadSource()).rejects.toThrow("Not found");
     });
+
+    it("downloads authenticated media with the Matrix access token", async () => {
+        const cli = stubClient();
+        vi.mocked(cli.getAccessToken).mockReturnValue("matrix-token");
+        // eslint-disable-next-line no-restricted-properties
+        vi.mocked(cli.mxcUrlToHttp).mockReturnValue(
+            "https://matrix.org/_matrix/client/v1/media/download/matrix.org/1234",
+        );
+        fetchMock.get("https://matrix.org/_matrix/client/v1/media/download/matrix.org/1234", {
+            status: 200,
+            body: "image bytes",
+        });
+
+        const media = mediaFromMxc("mxc://matrix.org/1234", cli);
+        await expect(media.downloadSourceAuthenticated()).resolves.toBeInstanceOf(Response);
+
+        // eslint-disable-next-line no-restricted-properties
+        expect(cli.mxcUrlToHttp).toHaveBeenCalledWith(
+            "mxc://matrix.org/1234",
+            undefined,
+            undefined,
+            undefined,
+            false,
+            true,
+            true,
+        );
+        expect(fetchMock.callHistory.lastCall()?.options.headers).toEqual({ authorization: "Bearer matrix-token" });
+    });
 });

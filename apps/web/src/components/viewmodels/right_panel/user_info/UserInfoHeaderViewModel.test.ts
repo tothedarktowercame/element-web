@@ -164,6 +164,9 @@ describe("useUserInfoHeaderViewModel", () => {
             downloadSource: function (): Promise<Response> {
                 throw new Error("Function not implemented.");
             },
+            downloadSourceAuthenticated: function (): Promise<Response> {
+                throw new Error("Function not implemented.");
+            },
         });
 
         const { result } = renderUserInfoHeaderViewModelHook(props);

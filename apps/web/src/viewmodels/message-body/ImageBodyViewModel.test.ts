@@ -122,6 +122,7 @@ describe("ImageBodyViewModel", () => {
             getThumbnailOfSourceHttp: vi.fn().mockReturnValue("https://server/thumb.png"),
             getSquareThumbnailHttp: vi.fn(),
             downloadSource: vi.fn(),
+            downloadSourceAuthenticated: vi.fn(),
         }) as unknown as Media;
 
     const createVm = (
@@ -359,6 +360,36 @@ describe("ImageBodyViewModel", () => {
             src: "blob:just-uploaded",
             thumbnailSrc: "blob:just-uploaded-thumbnail",
         });
+    });
+
+    it("downloads Fumarimo image outputs through authenticated Matrix media", async () => {
+        const media = createMockMedia({ url: "mxc://server/image" });
+        vi.mocked(media.downloadSourceAuthenticated).mockResolvedValue(
+            new Response(new Blob(["png"], { type: "image/png" }), { status: 200 }),
+        );
+        mockedMediaFromContent.mockReturnValue(media);
+        vi.mocked(URL.createObjectURL).mockReturnValue("blob:fumarimo-output");
+        const vm = createVm({
+            mediaVisible: true,
+            mxEvent: createEvent({
+                content: {
+                    "org.paragogy.marimo": { kind: "image-output" },
+                    "info": { mimetype: "image/png" },
+                },
+            }),
+        });
+
+        await downloadImageForTest(vm);
+
+        expect(media.downloadSourceAuthenticated).toHaveBeenCalledOnce();
+        expect(vm.getSnapshot()).toMatchObject({
+            state: ImageBodyViewState.READY,
+            src: "blob:fumarimo-output",
+            thumbnailSrc: "blob:fumarimo-output",
+        });
+
+        vm.dispose();
+        expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:fumarimo-output");
     });
 
     it("reveals hidden media through the supplied setter", () => {
