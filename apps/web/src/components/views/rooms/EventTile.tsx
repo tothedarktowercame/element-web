@@ -108,6 +108,7 @@ import {
     type GetRelationsForEvent,
 } from "../../../viewmodels/room/timeline/event-tile/reactions/EventTileReactionState";
 import { TileErrorViewModel } from "../../../viewmodels/message-body/TileErrorViewModel";
+import { selectFutonAnnotationEvent } from "../../../customisations/FutonAnnotations";
 import { useSettingValue } from "../../../hooks/useSettings";
 import { resolveRoomMemberProfile, roomMemberToMemberInfo } from "../../../hooks/room/useRoomMemberProfile";
 import { EventTileE2eViewModel } from "../../../viewmodels/room/timeline/event-tile/EventTileE2eViewModel";
@@ -526,6 +527,8 @@ export class UnwrappedEventTile extends React.Component<EventTileProps, IState> 
     };
 
     private readonly onPreviewTileClick = (ev: MouseEvent<HTMLElement>): void => {
+        const eventId = this.props.mxEvent.getId();
+        if (eventId) selectFutonAnnotationEvent(eventId);
         const target = ev.currentTarget;
         const index = target.parentElement ? Array.from(target.parentElement.children).indexOf(target) : -1;
 
