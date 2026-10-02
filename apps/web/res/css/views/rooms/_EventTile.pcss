@@ -116,6 +116,29 @@ $left-gutter: 64px;
         color: #66665e;
     }
 
+    .mx_FutonMarimoCell {
+        width: min(100%, 760px);
+        margin-block: var(--cpd-space-3x);
+        overflow: hidden;
+        border: 1px solid var(--cpd-color-border-interactive-secondary);
+        border-radius: 8px;
+        background: var(--cpd-color-bg-canvas-default);
+
+        > header {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--cpd-space-2x) var(--cpd-space-3x);
+            border-bottom: 1px solid var(--cpd-color-border-interactive-secondary);
+        }
+
+        iframe {
+            display: block;
+            width: 100%;
+            height: 430px;
+            border: 0;
+        }
+    }
+
     @media (prefers-reduced-motion: reduce) {
         [data-futon-intent-mark] {
             transition: none;
