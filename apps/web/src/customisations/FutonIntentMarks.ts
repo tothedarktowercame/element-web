@@ -35,6 +35,20 @@ interface TurnDetail {
         labeller?: string;
         sentences?: Array<{ fragments?: Fragment[] }>;
     } | null;
+    draft?: {
+        status?: string;
+        labeller?: string;
+        source_text?: string;
+        fragments?: Array<{
+            start: number;
+            end: number;
+            text: string;
+            intent?: string | null;
+            guesses?: string[];
+            basis?: "declared" | "model";
+            mark?: string;
+        }>;
+    } | null;
 }
 
 export interface FutonIntentMark {
@@ -43,6 +57,7 @@ export interface FutonIntentMark {
     text: string;
     intent: string;
     help: string;
+    basis?: "draft" | "declared";
 }
 
 interface TurnSummary {
@@ -100,6 +115,49 @@ function exactMark(source: string, cue: Cue, intent: string, help: string): Futo
     };
 }
 
+function draftMark(
+    source: string,
+    fragment: NonNullable<NonNullable<TurnDetail["draft"]>["fragments"]>[number],
+    labeller: string,
+): FutonIntentMark | null {
+    const sourcePoints = codepoints(source);
+    const fragmentPoints = codepoints(fragment.text);
+    if (
+        !Number.isInteger(fragment.start) ||
+        !Number.isInteger(fragment.end) ||
+        fragment.end - fragment.start !== fragmentPoints.length ||
+        sourcePoints.slice(fragment.start, fragment.end).join("") !== fragment.text
+    ) {
+        return null;
+    }
+
+    const basis = fragment.basis === "declared" ? "declared" : "draft";
+    let cue: Cue | null = null;
+    if (basis === "declared" && fragment.mark) {
+        const markPoints = codepoints(fragment.mark);
+        cue = { start: fragment.start, end: fragment.start + markPoints.length, text: fragment.mark };
+    } else {
+        const leading = fragmentPoints.findIndex((point) => !/\s/u.test(point));
+        if (leading < 0) return null;
+        const words = fragmentPoints
+            .slice(leading)
+            .join("")
+            .match(/^\S+(?:\s+\S+){0,2}/u)?.[0];
+        if (!words) return null;
+        cue = {
+            start: fragment.start + leading,
+            end: fragment.start + leading + codepoints(words).length,
+            text: words,
+        };
+    }
+    const intent = fragment.intent ?? "unresolved";
+    const help = fragment.intent
+        ? `${fragment.intent} · (${labeller})`
+        : `? · guesses: ${(fragment.guesses ?? []).slice(0, 2).join(", ")} · (${labeller})`;
+    const validated = exactMark(source, cue, intent, help);
+    return validated ? { ...validated, basis } : null;
+}
+
 export function validatedIntentMarks(detail: TurnDetail): { source: string; marks: FutonIntentMark[] } | null {
     const source = detail.record?.source_text;
     if (typeof source !== "string") return null;
@@ -121,6 +179,14 @@ export function validatedIntentMarks(detail: TurnDetail): { source: string; mark
                     .filter((mark): mark is FutonIntentMark => mark !== null);
             }),
         );
+        if (marks.length > 0) return { source, marks };
+    }
+
+    const draft = detail.draft;
+    if (draft?.status === "drafted" && draft.source_text === source) {
+        const marks = (draft.fragments ?? [])
+            .map((fragment) => draftMark(source, fragment, draft.labeller ?? "小象"))
+            .filter((mark): mark is FutonIntentMark => mark !== null);
         if (marks.length > 0) return { source, marks };
     }
 
@@ -170,6 +236,7 @@ export function applyFutonIntentMarks(root: HTMLElement, source: string, marks: 
             selected.splitText(partEnd - partStart);
             const underline = document.createElement("span");
             underline.dataset.futonIntentMark = mark.intent;
+            if (mark.basis) underline.dataset.futonIntentBasis = mark.basis;
             underline.title = mark.help;
             selected.replaceWith(underline);
             underline.append(selected);

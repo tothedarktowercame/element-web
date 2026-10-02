@@ -81,6 +81,120 @@ describe("FUTON intent marks", () => {
         expect(validatedIntentMarks(detail)?.marks).toEqual([]);
     });
 
+    it("uses Xiaoxiang draft fragments when analysis has not arrived", () => {
+        const detail = {
+            record: { source_text: "Please make this work today", sentences: [] },
+            analysis: null,
+            draft: {
+                status: "drafted",
+                labeller: "小象",
+                source_text: "Please make this work today",
+                fragments: [
+                    {
+                        start: 0,
+                        end: 27,
+                        text: "Please make this work today",
+                        intent: "ask-action",
+                        guesses: ["ask-action", "propose"],
+                    },
+                ],
+            },
+        };
+        expect(validatedIntentMarks(detail)?.marks).toEqual([
+            expect.objectContaining({ text: "Please make this", intent: "ask-action", basis: "draft" }),
+        ]);
+    });
+
+    it("prefers Xiang analysis over a Xiaoxiang draft", () => {
+        const source = "Please approve this";
+        const detail = {
+            record: { source_text: source, sentences: [] },
+            draft: {
+                status: "drafted",
+                source_text: source,
+                fragments: [
+                    { start: 0, end: 19, text: source, intent: "ask-action", guesses: ["ask-action", "approve"] },
+                ],
+            },
+            analysis: {
+                status: "analyzed",
+                source_text: source,
+                labeller: "象",
+                sentences: [
+                    {
+                        fragments: [
+                            {
+                                intent: "approve",
+                                display_cues: [{ start: 7, end: 14, text: "approve" }],
+                            },
+                        ],
+                    },
+                ],
+            },
+        };
+        expect(validatedIntentMarks(detail)?.marks).toEqual([
+            expect.objectContaining({ text: "approve", intent: "approve" }),
+        ]);
+    });
+
+    it("shows both guesses for an unsure draft fragment", () => {
+        const source = "Maybe continue later";
+        const detail = {
+            record: { source_text: source, sentences: [] },
+            draft: {
+                status: "drafted",
+                labeller: "小象",
+                source_text: source,
+                fragments: [{ start: 0, end: 20, text: source, intent: null, guesses: ["continue", "defer"] }],
+            },
+        };
+        expect(validatedIntentMarks(detail)?.marks[0]).toEqual(
+            expect.objectContaining({ intent: "unresolved", help: "? · guesses: continue, defer · (小象)" }),
+        );
+    });
+
+    it("underlines only an author's declared proforma mark with solid styling", () => {
+        const source = "🈸 Please continue";
+        const detail = {
+            record: { source_text: source, sentences: [] },
+            draft: {
+                status: "drafted",
+                source_text: source,
+                fragments: [
+                    {
+                        start: 0,
+                        end: 17,
+                        text: source,
+                        intent: "ask-action",
+                        guesses: ["ask-action", "approve"],
+                        basis: "declared" as const,
+                        mark: "🈸",
+                    },
+                ],
+            },
+        };
+        const validated = validatedIntentMarks(detail)!;
+        const root = document.createElement("div");
+        root.textContent = source;
+        expect(applyFutonIntentMarks(root, validated.source, validated.marks)).toBe(1);
+        const mark = root.querySelector<HTMLElement>("[data-futon-intent-mark]");
+        expect(mark?.textContent).toBe("🈸");
+        expect(mark?.dataset.futonIntentBasis).toBe("declared");
+    });
+
+    it("rejects a draft fragment whose declared text does not match the source", () => {
+        const source = "Please approve this";
+        const detail = {
+            record: { source_text: source, sentences: [] },
+            draft: {
+                status: "drafted",
+                source_text: source,
+                fragments: [{ start: 0, end: 19, text: "Please dispute this", intent: "approve", guesses: [] }],
+            },
+        };
+        expect(validatedIntentMarks(detail)?.marks).toEqual([]);
+    });
+
     it("polls the turn list once per room rather than once per body", async () => {
         vi.useFakeTimers();
         const fetchMock = vi
