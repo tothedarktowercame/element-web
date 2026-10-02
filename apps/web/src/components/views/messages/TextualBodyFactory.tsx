@@ -42,6 +42,7 @@ import { MediaPreviewGroupViewModel } from "../../../viewmodels/message-body/Med
 import PopOutIcon from "@vector-im/compound-design-tokens/assets/web/icons/pop-out";
 import { EditMessageComposerWrapper } from "../rooms/EditMessageComposerWrapper";
 import { ModuleApi } from "../../../modules/Api";
+import { clearFutonIntentMarks, decorateWithFutonIntentMarks } from "../../../customisations/FutonIntentMarks";
 
 const logger = rootLogger.getChild("TextualBodyFactory");
 
@@ -277,6 +278,25 @@ export function TextualBodyFactory(props: Readonly<IBodyProps>): JSX.Element {
         props.isSeeingThroughMessageHiddenForModeration,
         urlPreviewVm,
     ]);
+
+    useEffect(() => {
+        const eventElement = contentRef.current;
+        const roomId = props.mxEvent.getRoomId();
+        const eventId = props.mxEvent.getId();
+        if (!eventElement || !client || !roomId || !eventId) return;
+
+        let disposed = false;
+        const decorate = async (): Promise<void> => {
+            if (!disposed) await decorateWithFutonIntentMarks(eventElement, client, roomId, eventId);
+        };
+        void decorate();
+        const interval = window.setInterval(() => void decorate(), 10_000);
+        return (): void => {
+            disposed = true;
+            window.clearInterval(interval);
+            clearFutonIntentMarks(eventElement);
+        };
+    }, [client, content, props.mxEvent]);
 
     useEffect(() => {
         void urlPreviewVm.updateUrlPreviewVisible(props.showUrlPreview ?? false).catch((error) => {

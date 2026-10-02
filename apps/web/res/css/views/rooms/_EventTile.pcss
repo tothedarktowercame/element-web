@@ -63,6 +63,24 @@ $left-gutter: 64px;
         }
     }
 
+    [data-futon-intent-mark] {
+        text-decoration-line: underline;
+        text-decoration-color: #7b61a8;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 0.14em;
+    }
+
+    [data-futon-intent-mark="approve"],
+    [data-futon-intent-mark="continue"] {
+        text-decoration-color: #3a9b58;
+    }
+
+    [data-futon-intent-mark="disagree"],
+    [data-futon-intent-mark="report-problem"],
+    [data-futon-intent-mark="constrain"] {
+        text-decoration-color: #c94848;
+    }
+
     .mx_EventTileBubble {
         margin-block: var(--EventTileBubble_margin-block);
         min-width: 100px;
