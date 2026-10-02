@@ -48,6 +48,8 @@ export function syncFutonAnnotationTheme(
     const bodyStyle = window.getComputedStyle(root.body);
     const surface = root.querySelector<HTMLElement>(".mx_RoomView") ?? root.body;
     const surfaceStyle = window.getComputedStyle(surface);
+    const background = bodyStyle.getPropertyValue("--cpd-color-bg-canvas-default").trim();
+    const foreground = bodyStyle.getPropertyValue("--cpd-color-text-primary").trim();
     const message: FutonAnnotationTheme = {
         type: "futon.annotation-theme",
         theme:
@@ -55,8 +57,8 @@ export function syncFutonAnnotationTheme(
                 ? "dark"
                 : "light",
         fontFamily: bodyStyle.fontFamily,
-        foreground: surfaceStyle.color,
-        background: surfaceStyle.backgroundColor,
+        foreground: foreground || surfaceStyle.color,
+        background: background || surfaceStyle.backgroundColor,
     };
     root.querySelectorAll<HTMLIFrameElement>('iframe[src*="/xiang-widget/"]').forEach((iframe) => {
         if (!themeFrames.has(iframe)) {
