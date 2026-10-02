@@ -1,0 +1,28 @@
+{
+    "default_server_config": {
+        "m.homeserver": {
+            "base_url": "https://matrix.paragogy.net",
+            "server_name": "matrix.paragogy.net"
+        }
+    },
+    "disable_custom_urls": false,
+    "disable_guests": true,
+    "brand": "FUTON Matrix",
+    "permalink_prefix": "https://zone.hyperreal.enterprises/chat",
+    "default_widget_container_height": 560,
+    "default_country_code": "GB",
+    "show_labs_settings": true,
+    "default_federate": true,
+    "default_theme": "light",
+    "room_directory": {
+        "servers": ["matrix.paragogy.net"]
+    },
+    "setting_defaults": {
+        "breadcrumbs": true
+    },
+    "element_call": {
+        "brand": "Element Call",
+        "disable": true,
+        "use_exclusively": false
+    }
+}
