@@ -18,7 +18,8 @@ describe("inline Marimo cell", () => {
 
     it("carries exact room, event and author provenance into the notebook", () => {
         const url = new URL(marimoPostsUrl("!room:test", "$event", ["@joe:test", "@bot:test"]), "https://zone.test");
-        expect(url.pathname).toBe("/marimo-room/");
+        expect(url.pathname).toBe("/marimo/");
+        expect(url.searchParams.get("file")).toBe("matrix-room-posts.py");
         expect(url.searchParams.get("room")).toBe("!room:test");
         expect(url.searchParams.get("event")).toBe("$event");
         expect(JSON.parse(url.searchParams.get("authors")!)).toEqual(["@joe:test", "@bot:test"]);

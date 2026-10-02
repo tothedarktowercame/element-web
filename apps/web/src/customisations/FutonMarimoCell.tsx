@@ -21,11 +21,12 @@ export function requestsPostsPerAuthorCell(body: unknown): boolean {
 
 export function marimoPostsUrl(roomId: string, eventId: string, authors: string[]): string {
     const query = new URLSearchParams({
+        file: "matrix-room-posts.py",
         room: roomId,
         event: eventId,
         authors: JSON.stringify(authors),
     });
-    return `/marimo-room/?${query.toString()}`;
+    return `/marimo/?${query.toString()}`;
 }
 
 interface Props {
@@ -38,7 +39,7 @@ export function FutonMarimoCell({ roomId, eventId, authors }: Readonly<Props>): 
     return (
         <section className="mx_FutonMarimoCell" data-futon-marimo-event={eventId}>
             <header>
-                <strong>Python cell · Marimo</strong>
+                <strong>Editable Python cell · Marimo</strong>
                 <a href={marimoPostsUrl(roomId, eventId, authors)} target="_blank" rel="noreferrer">
                     Open notebook
                 </a>
