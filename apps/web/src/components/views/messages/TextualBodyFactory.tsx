@@ -43,7 +43,6 @@ import PopOutIcon from "@vector-im/compound-design-tokens/assets/web/icons/pop-o
 import { EditMessageComposerWrapper } from "../rooms/EditMessageComposerWrapper";
 import { ModuleApi } from "../../../modules/Api";
 import { registerFutonIntentMarks } from "../../../customisations/FutonIntentMarks";
-import { FutonMarimoCell, requestsPostsPerAuthorCell } from "../../../customisations/FutonMarimoCell";
 
 const logger = rootLogger.getChild("TextualBodyFactory");
 
@@ -327,30 +326,13 @@ export function TextualBodyFactory(props: Readonly<IBodyProps>): JSX.Element {
         );
     }
 
-    const eventId = props.mxEvent.getId();
-    const roomId = props.mxEvent.getRoomId();
-    const requestsAuthorChart = eventId && roomId && requestsPostsPerAuthorCell(content.body);
-    const authors = requestsAuthorChart
-        ? roomContext.room
-              ?.getLiveTimeline()
-              .getEvents()
-              .filter((event) => event.getType() === "m.room.message")
-              .map((event) => event.getSender())
-              .filter((sender): sender is string => typeof sender === "string")
-        : undefined;
-
     return (
-        <>
-            <TextualBodyView
-                vm={textualBodyVm}
-                body={<EventContentBodyView vm={eventContentBodyVm} as={willHaveWrapper ? "span" : "div"} />}
-                bodyRef={contentRef}
-                urlPreviews={<MediaPreviewGroupPreview vm={mediaPreviewVm} className="mx_TextualBody_urlPreviews" />}
-                className={getTextualBodyClassName(content.msgtype as MsgType | undefined)}
-            />
-            {eventId && roomId && authors ? (
-                <FutonMarimoCell roomId={roomId} eventId={eventId} authors={authors} />
-            ) : null}
-        </>
+        <TextualBodyView
+            vm={textualBodyVm}
+            body={<EventContentBodyView vm={eventContentBodyVm} as={willHaveWrapper ? "span" : "div"} />}
+            bodyRef={contentRef}
+            urlPreviews={<MediaPreviewGroupPreview vm={mediaPreviewVm} className="mx_TextualBody_urlPreviews" />}
+            className={getTextualBodyClassName(content.msgtype as MsgType | undefined)}
+        />
     );
 }
