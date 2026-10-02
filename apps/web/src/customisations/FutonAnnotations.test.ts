@@ -54,11 +54,34 @@ it("sends Element's resolved dark theme and font to the annotation widget", () =
     const postMessage = vi.fn();
     const query = vi
         .spyOn(document, "querySelectorAll")
-        .mockReturnValue([{ contentWindow: { postMessage } }] as unknown as NodeListOf<HTMLIFrameElement>);
+        .mockReturnValue([
+            { contentWindow: { postMessage }, addEventListener: vi.fn() },
+        ] as unknown as NodeListOf<HTMLIFrameElement>);
 
     const message = syncFutonAnnotationTheme(document, "https://zone.test");
     expect(message.theme).toBe("dark");
     expect(message.fontFamily).toContain("Inter");
     expect(postMessage).toHaveBeenCalledWith(message, "https://zone.test");
+    query.mockRestore();
+});
+
+it("resends the current theme when the widget finishes loading", () => {
+    document.body.className = "cpd-theme-dark";
+    const postMessage = vi.fn();
+    const frame = document.createElement("iframe");
+    frame.src = "https://zone.test/xiang-widget/?annotations=1";
+    Object.defineProperty(frame, "contentWindow", { value: { postMessage } });
+    const query = vi
+        .spyOn(document, "querySelectorAll")
+        .mockReturnValue([frame] as unknown as NodeListOf<HTMLIFrameElement>);
+
+    syncFutonAnnotationTheme(document, "https://zone.test");
+    postMessage.mockClear();
+    frame.dispatchEvent(new Event("load"));
+
+    expect(postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "futon.annotation-theme", theme: "dark" }),
+        "https://zone.test",
+    );
     query.mockRestore();
 });

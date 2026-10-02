@@ -38,6 +38,8 @@ export interface FutonAnnotationTheme {
     background: string;
 }
 
+const themeFrames = new WeakSet<HTMLIFrameElement>();
+
 /** Send Element's resolved user theme to each isolated annotation iframe. */
 export function syncFutonAnnotationTheme(
     root: Document = document,
@@ -57,6 +59,10 @@ export function syncFutonAnnotationTheme(
         background: surfaceStyle.backgroundColor,
     };
     root.querySelectorAll<HTMLIFrameElement>('iframe[src*="/xiang-widget/"]').forEach((iframe) => {
+        if (!themeFrames.has(iframe)) {
+            themeFrames.add(iframe);
+            iframe.addEventListener("load", () => syncFutonAnnotationTheme(root, targetOrigin), { once: true });
+        }
         iframe.contentWindow?.postMessage(message, targetOrigin);
     });
     return message;
@@ -69,5 +75,5 @@ export function observeFutonAnnotationTheme(root: Document = document): void {
     syncFutonAnnotationTheme(root);
     if (themeObserver) return;
     themeObserver = new MutationObserver(() => syncFutonAnnotationTheme(root));
-    themeObserver.observe(root.body, { attributes: true, attributeFilter: ["class"] });
+    themeObserver.observe(root.body, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true });
 }
